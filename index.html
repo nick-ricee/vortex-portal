@@ -293,6 +293,27 @@ hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
   </div>
 </div>
 
+<!-- DATE EDIT MODAL -->
+<div class="modal-overlay" id="date-modal">
+  <div class="modal">
+    <div class="modal-title">Edit Phase Dates</div>
+    <div class="modal-fields">
+      <div class="input-group" style="margin:0">
+        <label class="input-label">Start Date</label>
+        <input type="text" id="date-start" placeholder="e.g. Jun 15">
+      </div>
+      <div class="input-group" style="margin:0">
+        <label class="input-label">End Date</label>
+        <input type="text" id="date-end" placeholder="e.g. Jul 15">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeDateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDates()">Save Dates</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay confirm-modal" id="confirm-modal">
   <div class="modal">
@@ -466,34 +487,34 @@ function renderPhases(){
   });
 }
 
+function calcProgress(phaseId, dept){
+  const dTasks=allTasks.filter(t=>t.phase_id===phaseId&&t.department===dept);
+  if(!dTasks.length)return 0;
+  const completed=dTasks.filter(t=>t.completed).length;
+  return Math.round((completed/dTasks.length)*100);
+}
+
 function renderPhaseCard(phase){
   const tasks=allTasks.filter(t=>t.phase_id===phase.id);
   const depts=[...new Set(tasks.map(t=>t.department))];
-  // also add depts that might have no tasks yet but have progress
-  const progDepts=allProgress.filter(p=>p.phase_id===phase.id).map(p=>p.department);
-  const allDepts=[...new Set([...depts,...progDepts])];
   const isCurrent=phase.status==='current';
   const sClass={current:'s-current',next:'s-next',future:'s-future',done:'s-done'}[phase.status]||'s-future';
   const sLabel={current:'Now',next:'Up Next',future:'Future',done:'Done'}[phase.status]||phase.status;
 
-  const progressBars=allDepts.map(dept=>{
-    const prog=allProgress.find(p=>p.phase_id===phase.id&&p.department===dept);
-    const val=prog?.value||0;
+  const progressBars=depts.map(dept=>{
+    const val=calcProgress(phase.id, dept);
     const color=`var(${DEPT_COLOR[dept]||'--muted'})`;
-    const canEdit=canEditDept(dept);
+    const dTasks=tasks.filter(t=>t.department===dept);
+    const completed=dTasks.filter(t=>t.completed).length;
     return `<div class="prog-item">
       <div class="prog-header">
         <span class="prog-label" style="color:${color}">${DEPT_LABEL[dept]||dept}</span>
-        <span class="prog-val" id="pv-${phase.id}-${dept}">${val}%</span>
+        <span class="prog-val">${completed}/${dTasks.length} · ${val}%</span>
       </div>
-      ${canEdit
-        ?`<input type="range" min="0" max="100" value="${val}" style="accent-color:${color}"
-            oninput="updateProgressLabel(${phase.id},'${dept}',this.value)"
-            onchange="saveProgress(${phase.id},'${dept}',this.value)">`
-        :`<div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${val}%;background:${color}"></div></div>`
-      }
+      <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${val}%;background:${color}"></div></div>
     </div>`;
   }).join('');
+
 
   const tracksByDept=['pm','research','software','mechanical','publication'].map(dept=>{
     const dTasks=tasks.filter(t=>t.department===dept);
@@ -534,6 +555,10 @@ function renderPhaseCard(phase){
     <button class="btn btn-secondary btn-sm" onclick="confirmAdvancePhase()">Advance Phase</button>
   </div>`:'';
 
+  const dateDisplay=isAdmin()
+    ?`<span class="phase-date" onclick="event.stopPropagation();openEditDates(${phase.id},'${phase.start_date}','${phase.end_date}')" style="cursor:pointer;border-bottom:1px dashed var(--border2);padding-bottom:1px" title="Click to edit dates">${phase.start_date} – ${phase.end_date} ✎</span>`
+    :`<span class="phase-date">${phase.start_date} – ${phase.end_date}</span>`;
+
   return `<div class="phase-card ${isCurrent?'current-phase':''}" id="phase-card-${phase.id}">
     <div class="phase-header-row" onclick="togglePhaseCard(${phase.id})">
       <div class="phase-left">
@@ -541,7 +566,7 @@ function renderPhaseCard(phase){
         <span class="phase-name">${phase.name}</span>
       </div>
       <div class="phase-right">
-        <span class="phase-date">${phase.start_date} – ${phase.end_date}</span>
+        ${dateDisplay}
         <span class="status-pill ${sClass}">${sLabel}</span>
         <span class="chevron">▼</span>
       </div>
@@ -577,8 +602,7 @@ function renderLanes(){
     </div>`;
     depts.forEach(dept=>{
       const dTasks=tasks.filter(t=>t.department===dept);
-      const prog=allProgress.find(p=>p.phase_id===phase.id&&p.department===dept);
-      const val=prog?.value||0;
+      const val=calcProgress(phase.id,dept);
       const color=`var(${DEPT_COLOR[dept]})`;
       const canManage=canManageTasks(dept);
       const pills=dTasks.map(t=>`<div class="lane-pill ${DEPT_CLASS[dept]}">
@@ -623,20 +647,26 @@ async function toggleTask(taskId,currentlyCompleted,dept){
   }
 }
 
-// PROGRESS
-function updateProgressLabel(phaseId,dept,val){
-  const el=document.getElementById(`pv-${phaseId}-${dept}`);
-  if(el)el.textContent=val+'%';
+// DATES
+let editDatePhaseId=null;
+function openEditDates(phaseId,startDate,endDate){
+  editDatePhaseId=phaseId;
+  document.getElementById('date-start').value=startDate||'';
+  document.getElementById('date-end').value=endDate||'';
+  document.getElementById('date-modal').classList.add('open');
 }
-
-async function saveProgress(phaseId,dept,val){
-  const idx=allProgress.findIndex(p=>p.phase_id===phaseId&&p.department===dept);
-  if(idx>-1)allProgress[idx]={...allProgress[idx],value:parseInt(val)};
-  const{error}=await sb.from('progress').upsert({
-    phase_id:phaseId,department:dept,value:parseInt(val),
-    updated_by:currentUser.id,updated_at:new Date().toISOString()
-  },{onConflict:'phase_id,department'});
-  if(error)toast('Could not save progress','error');
+function closeDateModal(){document.getElementById('date-modal').classList.remove('open');}
+async function saveDates(){
+  const start=document.getElementById('date-start').value.trim();
+  const end=document.getElementById('date-end').value.trim();
+  if(!start||!end)return toast('Both dates required','error');
+  const{error}=await sb.from('phases').update({start_date:start,end_date:end}).eq('id',editDatePhaseId);
+  if(error)return toast('Error: '+error.message,'error');
+  const idx=allPhases.findIndex(p=>p.id===editDatePhaseId);
+  if(idx>-1){allPhases[idx]={...allPhases[idx],start_date:start,end_date:end};}
+  closeDateModal();
+  renderAll();
+  toast('Dates updated','success');
 }
 
 // TASK MODAL
