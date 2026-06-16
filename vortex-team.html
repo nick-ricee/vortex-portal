@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VORTEX — Team Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root {
+  --bg:#090c14;--surface:#111827;--surface2:#162030;--border:#1e2d45;--border2:#2a3f5f;
+  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;--accent:#3b82f6;--accent2:#818cf8;
+  --pm:#3b82f6;--pm-bg:rgba(59,130,246,0.12);
+  --res:#a78bfa;--res-bg:rgba(167,139,250,0.12);
+  --sw:#34d399;--sw-bg:rgba(52,211,153,0.12);
+  --me:#fb923c;--me-bg:rgba(251,146,60,0.12);
+  --pub:#f472b6;--pub-bg:rgba(244,114,182,0.12);
+  --success:#22c55e;--danger:#ef4444;--warn:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+#login-screen{align-items:center;justify-content:center;padding:40px 20px;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:420px;text-align:center;}
+.login-logo{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.02em;margin-bottom:6px;}
+.login-logo span{color:var(--accent);}
+.login-subtitle{font-size:13px;color:var(--muted2);margin-bottom:32px;}
+.input-group{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;text-align:left;}
+.input-label{font-size:12px;font-weight:500;color:var(--muted2);font-family:'Space Mono',monospace;letter-spacing:0.06em;text-transform:uppercase;}
+input[type="email"],input[type="text"],input[type="password"],select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select option{background:var(--surface);}
+textarea{resize:vertical;min-height:70px;line-height:1.5;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:8px;border:none;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-primary{background:var(--accent);color:#fff;width:100%;}
+.btn-primary:hover{background:#2563eb;}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--border2);}
+.btn-danger{background:rgba(239,68,68,0.15);color:var(--danger);border:1px solid rgba(239,68,68,0.2);}
+.btn-sm{padding:5px 11px;font-size:12px;width:auto;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.magic-sent{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:14px;font-size:13px;color:var(--success);margin-top:12px;display:none;}
+#setup-screen{align-items:center;justify-content:center;padding:40px 20px;}
+.setup-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:460px;}
+.setup-title{font-size:20px;font-weight:700;color:#fff;margin-bottom:6px;}
+.setup-subtitle{font-size:13px;color:var(--muted2);margin-bottom:28px;}
+.topnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;gap:12px;}
+.nav-logo{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:#fff;letter-spacing:-0.01em;flex-shrink:0;}
+.nav-logo span{color:var(--accent);}
+.nav-tabs{display:flex;gap:2px;flex:1;justify-content:center;overflow-x:auto;}
+.nav-tab{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+.nav-tab.active{background:rgba(59,130,246,0.15);color:var(--accent);}
+.nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.nav-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;}
+.role-badge{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;font-weight:700;}
+.main{flex:1;padding:32px 24px 60px;max-width:1100px;width:100%;margin:0 auto;}
+.page-header{margin-bottom:28px;}
+.page-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;}
+.page-subtitle{font-size:13px;color:var(--muted2);}
+.phase-list{display:flex;flex-direction:column;gap:12px;}
+.phase-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color 0.2s;}
+.phase-card.current-phase{border-color:rgba(59,130,246,0.4);}
+.phase-header-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;gap:12px;flex-wrap:wrap;}
+.phase-left{display:flex;align-items:center;gap:12px;}
+.phase-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);min-width:20px;}
+.phase-name{font-size:15px;font-weight:600;color:#fff;}
+.phase-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.phase-date{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);}
+.status-pill{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px;}
+.s-current{background:rgba(59,130,246,0.15);color:var(--accent);}
+.s-next{background:rgba(100,116,139,0.12);color:var(--muted2);}
+.s-future{background:rgba(100,116,139,0.08);color:var(--muted);}
+.s-done{background:rgba(34,197,94,0.12);color:var(--success);}
+.chevron{font-size:11px;color:var(--muted);transition:transform 0.25s;}
+.phase-card.open .chevron{transform:rotate(180deg);}
+.phase-body{display:none;border-top:1px solid var(--border);}
+.phase-card.open .phase-body{display:block;}
+.progress-section{padding:16px 20px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.prog-item{display:flex;flex-direction:column;gap:5px;}
+.prog-header{display:flex;justify-content:space-between;align-items:center;}
+.prog-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;}
+.prog-val{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);}
+.prog-bar-bg{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.prog-bar-fill{height:100%;border-radius:3px;transition:width 0.4s ease;}
+input[type="range"]{width:100%;height:5px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none;cursor:pointer;border:none;padding:0;}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg);}
+.tracks{padding:16px 20px 20px;display:flex;flex-direction:column;gap:16px;}
+.track{display:flex;flex-direction:column;gap:6px;}
+.track-header{display:flex;align-items:center;justify-content:space-between;}
+.track-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin-bottom:2px;}
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid transparent;transition:all 0.15s;position:relative;}
+.task-item:hover{border-color:var(--border);background:rgba(255,255,255,0.02);}
+.task-item:hover .task-actions{opacity:1;}
+.task-actions{opacity:0;display:flex;gap:4px;flex-shrink:0;transition:opacity 0.15s;}
+.task-action-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;transition:all 0.15s;font-family:'Space Grotesk',sans-serif;}
+.task-action-btn:hover{background:var(--surface2);color:var(--text);}
+.task-action-btn.del:hover{color:var(--danger);}
+.task-item.completed-task{opacity:0.5;}
+.task-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border2);background:transparent;flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:11px;}
+.task-check.can-check:hover{border-color:var(--accent);background:rgba(59,130,246,0.1);}
+.task-check.checked{background:var(--success);border-color:var(--success);color:#fff;}
+.task-check.locked{cursor:default;opacity:0.4;}
+.big-goal-star{color:var(--warn);font-size:11px;flex-shrink:0;margin-top:3px;}
+.task-body{flex:1;}
+.task-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.35;}
+.task-title.done-title{text-decoration:line-through;color:var(--muted);}
+.task-note{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.task-owner{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:7px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.add-task-btn{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:7px;border:1px dashed var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;margin-top:4px;width:100%;}
+.add-task-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,0.05);}
+.advance-bar{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.advance-note{font-size:12px;color:var(--muted);}
+.lane-wrap{overflow-x:auto;}
+.lane-grid{display:grid;grid-template-columns:130px repeat(5,1fr);min-width:780px;border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.lane-hdr{padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.lane-hdr:last-child{border-right:none;}
+.lane-hdr.team-hdr{font-size:10px;font-weight:700;}
+.lane-row-lbl{padding:12px;background:var(--surface2);border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.lane-phase-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:0.1em;}
+.lane-phase-name{font-size:11px;font-weight:600;color:var(--text);line-height:1.3;margin-top:2px;}
+.lane-date{font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-top:3px;}
+.lane-cell{padding:10px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:top;}
+.lane-cell:last-child{border-right:none;}
+.lane-pill{font-size:11px;line-height:1.3;padding:5px 8px;border-radius:5px;margin-bottom:4px;border-left:2px solid transparent;color:var(--text);display:flex;align-items:flex-start;justify-content:space-between;gap:4px;group:true;}
+.lane-pill:last-child{margin-bottom:0;}
+.lane-pill-text{flex:1;}
+.lane-pill-actions{display:none;gap:2px;flex-shrink:0;}
+.lane-pill:hover .lane-pill-actions{display:flex;}
+.lane-pill-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;padding:1px 4px;border-radius:3px;font-family:'Space Grotesk',sans-serif;}
+.lane-pill-btn:hover{background:rgba(255,255,255,0.1);color:var(--text);}
+.lane-pill-btn.del:hover{color:var(--danger);}
+.lp-pm{background:var(--pm-bg);border-left-color:var(--pm);}
+.lp-res{background:var(--res-bg);border-left-color:var(--res);}
+.lp-sw{background:var(--sw-bg);border-left-color:var(--sw);}
+.lp-me{background:var(--me-bg);border-left-color:var(--me);}
+.lp-pub{background:var(--pub-bg);border-left-color:var(--pub);}
+.lane-prog{margin-top:6px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.lane-prog-fill{height:100%;border-radius:2px;transition:width 0.4s;}
+.lane-add-btn{display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:4px;border:1px dashed var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:10px;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;margin-top:5px;width:100%;}
+.lane-add-btn:hover{border-color:var(--accent);color:var(--accent);}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.admin-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.admin-card-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:space-between;}
+.admin-card-body{padding:16px;}
+.member-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.member-row:last-child{border-bottom:none;}
+.member-info{flex:1;min-width:0;}
+.member-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.member-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.role-select{font-size:11px;padding:4px 8px;border-radius:6px;min-width:90px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:460px;width:100%;}
+.modal-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:16px;}
+.modal-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+.modal-actions .btn{width:auto;}
+.confirm-modal .modal-body{font-size:13px;color:var(--muted2);margin-bottom:20px;line-height:1.5;}
+.toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;pointer-events:none;}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;max-width:300px;}
+.toast.success{border-color:rgba(34,197,94,0.3);color:var(--success);}
+.toast.error{border-color:rgba(239,68,68,0.3);color:var(--danger);}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--muted);font-size:13px;gap:10px;}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{font-size:13px;color:var(--muted);padding:16px 0;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.06em;}
+hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
+.checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted2);}
+.checkbox-row input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="screen active">
+  <div class="login-box">
+    <div class="login-logo">V.O.R.T.E.X<span>.</span></div>
+    <div class="login-subtitle">Team Portal — College of the Canyons SPES</div>
+    <div class="input-group">
+      <label class="input-label">Email</label>
+      <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')sendMagicLink()">
+    </div>
+    <button class="btn btn-primary" onclick="sendMagicLink()">Send Magic Link</button>
+    <div class="magic-sent" id="magic-sent">Check your email — a login link is on its way.</div>
+  </div>
+</div>
+
+<div id="setup-screen" class="screen">
+  <div class="setup-box">
+    <div class="setup-title">Welcome to VORTEX</div>
+    <div class="setup-subtitle">Enter your name to finish setting up your account.</div>
+    <div class="input-group">
+      <label class="input-label">Your Full Name</label>
+      <input type="text" id="setup-name" placeholder="e.g. Nathan Segura" onkeydown="if(event.key==='Enter')completeSetup()">
+    </div>
+    <button class="btn btn-primary" onclick="completeSetup()">Enter the Portal</button>
+  </div>
+</div>
+
+<div id="app-screen" class="screen">
+  <nav class="topnav">
+    <div class="nav-logo">V.O.R.T.E.X<span>.</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('phases',this)">Phases</button>
+      <button class="nav-tab" onclick="showTab('lanes',this)">Swim Lanes</button>
+      <button class="nav-tab admin-only" onclick="showTab('admin',this)" style="display:none">Admin</button>
+    </div>
+    <div class="nav-right">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="nav-avatar" id="nav-avatar"></div>
+        <span class="role-badge" id="nav-role-badge"></span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+  <div class="main">
+    <div id="tab-phases">
+      <div class="page-header">
+        <div class="page-title">Project Phases</div>
+        <div class="page-subtitle">Click any phase to expand. ★ = major milestone.</div>
+      </div>
+      <div class="phase-list" id="phase-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="tab-lanes" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Swim Lanes</div>
+        <div class="page-subtitle">All teams across all phases.</div>
+      </div>
+      <div class="lane-wrap"><div class="lane-grid" id="lane-grid"><div class="loading" style="grid-column:1/-1"><div class="spinner"></div> Loading...</div></div></div>
+    </div>
+    <div id="tab-admin" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Admin Panel</div>
+        <div class="page-subtitle">Manage team members, roles, and phase progression.</div>
+      </div>
+      <div class="admin-grid">
+        <div class="admin-card" style="grid-column:1/-1">
+          <div class="admin-card-header">Team Members <button class="btn btn-secondary btn-sm" onclick="loadMembers()">Refresh</button></div>
+          <div class="admin-card-body"><div id="members-list"><div class="loading"><div class="spinner"></div></div></div></div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">Phase Control</div>
+          <div class="admin-card-body">
+            <p style="font-size:13px;color:var(--muted2);margin-bottom:14px;line-height:1.5">Advance the current phase when its gate review is complete. Updates for everyone instantly.</p>
+            <button class="btn btn-primary" onclick="confirmAdvancePhase()">Advance to Next Phase</button>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="admin-card-header">Adding Members</div>
+          <div class="admin-card-body">
+            <p style="font-size:13px;color:var(--muted2);line-height:1.5">Share <strong style="color:var(--text)">vortex-team-eight.vercel.app</strong> with new members. They sign in with their email. They'll appear here as viewer — update their role and department below.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-title" id="task-modal-title">Add Task</div>
+    <div class="modal-fields">
+      <div class="input-group" style="margin:0">
+        <label class="input-label">Title</label>
+        <input type="text" id="tm-title" placeholder="Task description">
+      </div>
+      <div class="input-group" style="margin:0">
+        <label class="input-label">Note (optional)</label>
+        <textarea id="tm-note" placeholder="Additional context or details..."></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="input-group" style="margin:0">
+          <label class="input-label">Owner Initials</label>
+          <input type="text" id="tm-initials" placeholder="e.g. NR" maxlength="3">
+        </div>
+        <div class="input-group" style="margin:0">
+          <label class="input-label">Owner Name</label>
+          <input type="text" id="tm-name" placeholder="e.g. Nick Reisinger">
+        </div>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="tm-biggoal">
+        ★ Mark as major milestone
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeTaskModal()">Cancel</button>
+      <button class="btn btn-primary" id="tm-save-btn" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay confirm-modal" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="cm-title">Are you sure?</div>
+    <div class="confirm-modal"><div class="modal-body" id="cm-body"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-primary" id="cm-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const SUPABASE_URL='https://eyqzfapsirbfwhsoabhw.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5cXpmYXBzaXJiZndoc29hYmh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NTIwNjIsImV4cCI6MjA5NzEyODA2Mn0.OJme9n9EmLnaY1hcqcgs2ClL8Ru01QxBHrdgYRK3CqM';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const DEPT_COLOR={pm:'--pm',research:'--res',software:'--sw',mechanical:'--me',publication:'--pub'};
+const DEPT_LABEL={pm:'Project Mgmt',research:'Research',software:'Software',mechanical:'Mech / Elec',publication:'Publication'};
+const DEPT_CLASS={pm:'lp-pm',research:'lp-res',software:'lp-sw',mechanical:'lp-me',publication:'lp-pub'};
+
+let currentUser=null,currentProfile=null;
+let allPhases=[],allTasks=[],allProgress=[];
+let realtimeSub=null;
+let taskModalContext={mode:'add',phaseId:null,dept:null,taskId:null};
+let openPhases=new Set();
+
+// AUTH
+async function sendMagicLink(){
+  const email=document.getElementById('login-email').value.trim();
+  if(!email)return toast('Enter your email first','error');
+  const btn=event.target;
+  btn.disabled=true;btn.textContent='Sending...';
+  const{error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.href}});
+  if(error){toast(error.message,'error');btn.disabled=false;btn.textContent='Send Magic Link';return;}
+  document.getElementById('magic-sent').style.display='block';
+  btn.textContent='Sent!';
+}
+
+async function signOut(){
+  if(realtimeSub)sb.removeChannel(realtimeSub);
+  await sb.auth.signOut();
+  location.reload();
+}
+
+async function completeSetup(){
+  const name=document.getElementById('setup-name').value.trim();
+  if(!name)return toast('Enter your name','error');
+  const{error}=await sb.from('profiles').insert({id:currentUser.id,email:currentUser.email,name,role:'viewer'});
+  if(error)return toast(error.message,'error');
+  currentProfile={id:currentUser.id,email:currentUser.email,name,role:'viewer',department:null};
+  launchApp();
+}
+
+sb.auth.onAuthStateChange(async(event,session)=>{
+  if(!session){showScreen('login-screen');return;}
+  currentUser=session.user;
+  const{data:profile}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  if(!profile){showScreen('setup-screen');return;}
+  currentProfile=profile;
+  launchApp();
+});
+
+async function launchApp(){
+  showScreen('app-screen');
+  renderNavUser();
+  await loadAllData();
+  setupRealtime();
+  renderAll();
+  if(isAdmin()||isLead()){
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
+    if(isAdmin())loadMembers();
+  }
+}
+
+async function loadAllData(){
+  const[ph,tk,pr]=await Promise.all([
+    sb.from('phases').select('*').order('id'),
+    sb.from('tasks').select('*').order('phase_id').order('department').order('created_at'),
+    sb.from('progress').select('*')
+  ]);
+  allPhases=ph.data||[];
+  allTasks=tk.data||[];
+  allProgress=pr.data||[];
+}
+
+function setupRealtime(){
+  realtimeSub=sb.channel('vortex-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},payload=>{
+      if(payload.eventType==='INSERT'){
+        allTasks.push(payload.new);
+      }else if(payload.eventType==='UPDATE'){
+        const idx=allTasks.findIndex(t=>t.id===payload.new.id);
+        if(idx>-1)allTasks[idx]=payload.new;
+      }else if(payload.eventType==='DELETE'){
+        allTasks=allTasks.filter(t=>t.id!==payload.old.id);
+      }
+      renderAll();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'progress'},payload=>{
+      if(payload.eventType==='UPDATE'||payload.eventType==='INSERT'){
+        const idx=allProgress.findIndex(p=>p.phase_id===payload.new.phase_id&&p.department===payload.new.department);
+        if(idx>-1)allProgress[idx]=payload.new;else allProgress.push(payload.new);
+      }
+      renderAll();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'phases'},payload=>{
+      if(payload.eventType==='UPDATE'){
+        const idx=allPhases.findIndex(p=>p.id===payload.new.id);
+        if(idx>-1)allPhases[idx]=payload.new;
+      }
+      renderAll();
+    })
+    .subscribe();
+}
+
+function renderAll(){
+  renderPhases();
+  renderLanes();
+}
+
+// PERMISSIONS
+function isAdmin(){return currentProfile?.role==='admin';}
+function isLead(){return currentProfile?.role==='lead';}
+function canEditDept(dept){
+  if(isAdmin())return true;
+  if(isLead()&&currentProfile?.department===dept)return true;
+  if(currentProfile?.role==='member'&&currentProfile?.department===dept)return true;
+  return false;
+}
+function canCheckBigGoal(dept){
+  if(isAdmin())return true;
+  if(isLead()&&currentProfile?.department===dept)return true;
+  return false;
+}
+function canManageTasks(dept){
+  if(isAdmin())return true;
+  if(isLead()&&currentProfile?.department===dept)return true;
+  return false;
+}
+
+// NAV USER
+function renderNavUser(){
+  const name=currentProfile.name||currentProfile.email.split('@')[0];
+  const initials=name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  const dept=currentProfile.department;
+  const color=dept?`var(${DEPT_COLOR[dept]||'--muted2'})`:'var(--muted2)';
+  const av=document.getElementById('nav-avatar');
+  av.style.background=dept?`var(${DEPT_COLOR[dept]}bg,var(--surface2))`:'var(--surface2)';
+  av.style.color=color;
+  av.textContent=initials;
+  const badge=document.getElementById('nav-role-badge');
+  badge.textContent=currentProfile.role;
+  const rc={admin:'var(--accent)',lead:'var(--warn)',member:'var(--muted2)',viewer:'var(--muted)'};
+  badge.style.color=rc[currentProfile.role]||'var(--muted)';
+  badge.style.background=`rgba(100,116,139,0.1)`;
+  badge.style.border=`1px solid ${rc[currentProfile.role]||'var(--muted)'}40`;
+}
+
+// RENDER PHASES
+function renderPhases(){
+  const container=document.getElementById('phase-list');
+  if(!allPhases.length){container.innerHTML='<div class="empty">No phases found.</div>';return;}
+  container.innerHTML=allPhases.map(p=>renderPhaseCard(p)).join('');
+  // restore open state
+  openPhases.forEach(id=>{
+    const card=document.getElementById(`phase-card-${id}`);
+    if(card)card.classList.add('open');
+  });
+}
+
+function renderPhaseCard(phase){
+  const tasks=allTasks.filter(t=>t.phase_id===phase.id);
+  const depts=[...new Set(tasks.map(t=>t.department))];
+  // also add depts that might have no tasks yet but have progress
+  const progDepts=allProgress.filter(p=>p.phase_id===phase.id).map(p=>p.department);
+  const allDepts=[...new Set([...depts,...progDepts])];
+  const isCurrent=phase.status==='current';
+  const sClass={current:'s-current',next:'s-next',future:'s-future',done:'s-done'}[phase.status]||'s-future';
+  const sLabel={current:'Now',next:'Up Next',future:'Future',done:'Done'}[phase.status]||phase.status;
+
+  const progressBars=allDepts.map(dept=>{
+    const prog=allProgress.find(p=>p.phase_id===phase.id&&p.department===dept);
+    const val=prog?.value||0;
+    const color=`var(${DEPT_COLOR[dept]||'--muted'})`;
+    const canEdit=canEditDept(dept);
+    return `<div class="prog-item">
+      <div class="prog-header">
+        <span class="prog-label" style="color:${color}">${DEPT_LABEL[dept]||dept}</span>
+        <span class="prog-val" id="pv-${phase.id}-${dept}">${val}%</span>
+      </div>
+      ${canEdit
+        ?`<input type="range" min="0" max="100" value="${val}" style="accent-color:${color}"
+            oninput="updateProgressLabel(${phase.id},'${dept}',this.value)"
+            onchange="saveProgress(${phase.id},'${dept}',this.value)">`
+        :`<div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${val}%;background:${color}"></div></div>`
+      }
+    </div>`;
+  }).join('');
+
+  const tracksByDept=['pm','research','software','mechanical','publication'].map(dept=>{
+    const dTasks=tasks.filter(t=>t.department===dept);
+    if(!dTasks.length&&!canManageTasks(dept))return '';
+    const color=`var(${DEPT_COLOR[dept]||'--muted'})`;
+    const taskRows=dTasks.map(t=>{
+      const canCheck=t.is_big_goal?canCheckBigGoal(dept):canEditDept(dept);
+      const chkClass=t.completed?'checked':(canCheck?'can-check':'locked');
+      const canManage=canManageTasks(dept);
+      return `<div class="task-item ${t.completed?'completed-task':''}" id="task-${t.id}">
+        <div class="task-check ${chkClass}" onclick="${canCheck?`toggleTask('${t.id}',${t.completed},'${dept}')`:''}">${t.completed?'✓':''}</div>
+        ${t.is_big_goal?'<span class="big-goal-star">★</span>':''}
+        <div class="task-body">
+          <div class="task-title ${t.completed?'done-title':''}">${t.title}</div>
+          ${t.note?`<div class="task-note">${t.note}</div>`:''}
+        </div>
+        <div class="task-owner" style="background:${color}22;color:${color}" title="${t.owner_name||''}">${t.owner_initials||''}</div>
+        ${canManage?`<div class="task-actions">
+          <button class="task-action-btn" onclick="openEditTask('${t.id}')">Edit</button>
+          <button class="task-action-btn del" onclick="confirmDeleteTask('${t.id}','${phase.id}','${dept}')">✕</button>
+        </div>`:''}
+      </div>`;
+    }).join('');
+
+    const addBtn=canManageTasks(dept)?`<button class="add-task-btn" onclick="openAddTask(${phase.id},'${dept}')">+ Add task</button>`:'';
+
+    return `<div class="track">
+      <div class="track-header">
+        <div class="track-label" style="color:${color}">${DEPT_LABEL[dept]||dept}</div>
+      </div>
+      <div>${taskRows}</div>
+      ${addBtn}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const advanceBar=isAdmin()&&isCurrent?`<div class="advance-bar">
+    <span class="advance-note">Complete gate review before advancing.</span>
+    <button class="btn btn-secondary btn-sm" onclick="confirmAdvancePhase()">Advance Phase</button>
+  </div>`:'';
+
+  return `<div class="phase-card ${isCurrent?'current-phase':''}" id="phase-card-${phase.id}">
+    <div class="phase-header-row" onclick="togglePhaseCard(${phase.id})">
+      <div class="phase-left">
+        <span class="phase-num">0${phase.id}</span>
+        <span class="phase-name">${phase.name}</span>
+      </div>
+      <div class="phase-right">
+        <span class="phase-date">${phase.start_date} – ${phase.end_date}</span>
+        <span class="status-pill ${sClass}">${sLabel}</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="progress-section">${progressBars}</div>
+      <div class="tracks">${tracksByDept}</div>
+      ${advanceBar}
+    </div>
+  </div>`;
+}
+
+function togglePhaseCard(id){
+  const card=document.getElementById(`phase-card-${id}`);
+  card.classList.toggle('open');
+  if(card.classList.contains('open'))openPhases.add(id);
+  else openPhases.delete(id);
+}
+
+// RENDER SWIM LANES
+function renderLanes(){
+  const grid=document.getElementById('lane-grid');
+  const depts=['pm','research','software','mechanical','publication'];
+  let html=`<div class="lane-hdr">Phase</div>
+    ${depts.map(d=>`<div class="lane-hdr team-hdr" style="color:var(${DEPT_COLOR[d]})">${DEPT_LABEL[d]}</div>`).join('')}`;
+
+  allPhases.forEach(phase=>{
+    const tasks=allTasks.filter(t=>t.phase_id===phase.id);
+    html+=`<div class="lane-row-lbl">
+      <div class="lane-phase-num">Phase 0${phase.id}</div>
+      <div class="lane-phase-name">${phase.name}</div>
+      <div class="lane-date">${phase.start_date} – ${phase.end_date}</div>
+    </div>`;
+    depts.forEach(dept=>{
+      const dTasks=tasks.filter(t=>t.department===dept);
+      const prog=allProgress.find(p=>p.phase_id===phase.id&&p.department===dept);
+      const val=prog?.value||0;
+      const color=`var(${DEPT_COLOR[dept]})`;
+      const canManage=canManageTasks(dept);
+      const pills=dTasks.map(t=>`<div class="lane-pill ${DEPT_CLASS[dept]}">
+        <span class="lane-pill-text">${t.is_big_goal?'★ ':''}${t.title}</span>
+        ${canManage?`<span class="lane-pill-actions">
+          <button class="lane-pill-btn" onclick="openEditTask('${t.id}')">✎</button>
+          <button class="lane-pill-btn del" onclick="confirmDeleteTask('${t.id}',${phase.id},'${dept}')">✕</button>
+        </span>`:''}
+      </div>`).join('');
+      const addBtn=canManage?`<button class="lane-add-btn" onclick="openAddTask(${phase.id},'${dept}')">+ Add task</button>`:'';
+      html+=`<div class="lane-cell">
+        ${pills||`<div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace">—</div>`}
+        ${addBtn}
+        ${dTasks.length?`<div class="lane-prog"><div class="lane-prog-fill" style="width:${val}%;background:${color}"></div></div>`:''}
+      </div>`;
+    });
+  });
+  grid.innerHTML=html;
+}
+
+// TASK TOGGLE — instant local update
+async function toggleTask(taskId,currentlyCompleted,dept){
+  if(!canEditDept(dept)&&!isAdmin())return;
+  const newVal=!currentlyCompleted;
+  // update local state instantly
+  const idx=allTasks.findIndex(t=>t.id===taskId);
+  if(idx>-1){
+    allTasks[idx]={...allTasks[idx],completed:newVal,completed_by:newVal?currentUser.id:null};
+  }
+  renderAll();
+  // then save to db
+  const{error}=await sb.from('tasks').update({
+    completed:newVal,
+    completed_by:newVal?currentUser.id:null,
+    completed_at:newVal?new Date().toISOString():null
+  }).eq('id',taskId);
+  if(error){
+    // revert
+    if(idx>-1)allTasks[idx]={...allTasks[idx],completed:currentlyCompleted};
+    renderAll();
+    toast('Could not update task: '+error.message,'error');
+  }
+}
+
+// PROGRESS
+function updateProgressLabel(phaseId,dept,val){
+  const el=document.getElementById(`pv-${phaseId}-${dept}`);
+  if(el)el.textContent=val+'%';
+}
+
+async function saveProgress(phaseId,dept,val){
+  const idx=allProgress.findIndex(p=>p.phase_id===phaseId&&p.department===dept);
+  if(idx>-1)allProgress[idx]={...allProgress[idx],value:parseInt(val)};
+  const{error}=await sb.from('progress').upsert({
+    phase_id:phaseId,department:dept,value:parseInt(val),
+    updated_by:currentUser.id,updated_at:new Date().toISOString()
+  },{onConflict:'phase_id,department'});
+  if(error)toast('Could not save progress','error');
+}
+
+// TASK MODAL
+function openAddTask(phaseId,dept){
+  taskModalContext={mode:'add',phaseId,dept,taskId:null};
+  document.getElementById('task-modal-title').textContent=`Add Task — ${DEPT_LABEL[dept]}`;
+  document.getElementById('tm-title').value='';
+  document.getElementById('tm-note').value='';
+  document.getElementById('tm-initials').value='';
+  document.getElementById('tm-name').value='';
+  document.getElementById('tm-biggoal').checked=false;
+  document.getElementById('tm-save-btn').textContent='Add Task';
+  document.getElementById('task-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('tm-title').focus(),100);
+}
+
+function openEditTask(taskId){
+  const t=allTasks.find(t=>t.id===taskId);
+  if(!t)return;
+  if(!canManageTasks(t.department))return toast('No permission to edit this task','error');
+  taskModalContext={mode:'edit',phaseId:t.phase_id,dept:t.department,taskId};
+  document.getElementById('task-modal-title').textContent='Edit Task';
+  document.getElementById('tm-title').value=t.title||'';
+  document.getElementById('tm-note').value=t.note||'';
+  document.getElementById('tm-initials').value=t.owner_initials||'';
+  document.getElementById('tm-name').value=t.owner_name||'';
+  document.getElementById('tm-biggoal').checked=!!t.is_big_goal;
+  document.getElementById('tm-save-btn').textContent='Save Changes';
+  document.getElementById('task-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('tm-title').focus(),100);
+}
+
+function closeTaskModal(){document.getElementById('task-modal').classList.remove('open');}
+
+async function saveTask(){
+  const title=document.getElementById('tm-title').value.trim();
+  if(!title)return toast('Title is required','error');
+  const payload={
+    title,
+    note:document.getElementById('tm-note').value.trim()||null,
+    owner_initials:document.getElementById('tm-initials').value.trim().toUpperCase()||null,
+    owner_name:document.getElementById('tm-name').value.trim()||null,
+    is_big_goal:document.getElementById('tm-biggoal').checked
+  };
+  const btn=document.getElementById('tm-save-btn');
+  btn.disabled=true;
+  if(taskModalContext.mode==='add'){
+    payload.phase_id=taskModalContext.phaseId;
+    payload.department=taskModalContext.dept;
+    payload.completed=false;
+    const{data,error}=await sb.from('tasks').insert(payload).select().single();
+    if(error){toast('Error: '+error.message,'error');btn.disabled=false;return;}
+    allTasks.push(data);
+    toast('Task added','success');
+  }else{
+    const{data,error}=await sb.from('tasks').update(payload).eq('id',taskModalContext.taskId).select().single();
+    if(error){toast('Error: '+error.message,'error');btn.disabled=false;return;}
+    const idx=allTasks.findIndex(t=>t.id===taskModalContext.taskId);
+    if(idx>-1)allTasks[idx]={...allTasks[idx],...data};
+    toast('Task updated','success');
+  }
+  btn.disabled=false;
+  closeTaskModal();
+  renderAll();
+}
+
+function confirmDeleteTask(taskId,phaseId,dept){
+  if(!canManageTasks(dept))return toast('No permission','error');
+  const t=allTasks.find(t=>t.id===taskId);
+  showConfirm('Delete Task?',`Delete "${t?.title||'this task'}"? This cannot be undone.`,async()=>{
+    const{error}=await sb.from('tasks').delete().eq('id',taskId);
+    if(error)return toast('Error: '+error.message,'error');
+    allTasks=allTasks.filter(t=>t.id!==taskId);
+    renderAll();
+    closeConfirm();
+    toast('Task deleted','success');
+  });
+}
+
+// ADVANCE PHASE
+function confirmAdvancePhase(){
+  const current=allPhases.find(p=>p.status==='current');
+  const next=allPhases.find(p=>p.status==='next');
+  if(!current)return toast('No current phase','error');
+  if(!next)return toast('No next phase to advance to','error');
+  showConfirm(
+    'Advance Phase?',
+    `Mark Phase ${current.id} (${current.name}) as Done and set Phase ${next.id} (${next.name}) as current? This updates for everyone immediately.`,
+    async()=>{
+      await sb.from('phases').update({status:'done'}).eq('id',current.id);
+      await sb.from('phases').update({status:'current'}).eq('id',next.id);
+      const afterNext=allPhases.find(p=>p.status==='future'&&p.id===next.id+1);
+      if(afterNext)await sb.from('phases').update({status:'next'}).eq('id',afterNext.id);
+      closeConfirm();
+      toast('Phase advanced!','success');
+    }
+  );
+}
+
+// ADMIN MEMBERS
+async function loadMembers(){
+  const{data}=await sb.from('profiles').select('*').order('created_at');
+  if(!data)return;
+  const container=document.getElementById('members-list');
+  if(!data.length){container.innerHTML='<div class="empty">No members yet.</div>';return;}
+  container.innerHTML=data.map(m=>{
+    const initials=(m.name||m.email).split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const dept=m.department||'';
+    const color=dept?`var(${DEPT_COLOR[dept]||'--muted2'})`:'var(--muted2)';
+    return `<div class="member-row" id="mrow-${m.id}">
+      <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0;background:${dept?`var(${DEPT_COLOR[dept]}bg,var(--surface2))`:'var(--surface2)'};color:${color}">${initials}</div>
+      <div class="member-info">
+        <div class="member-name">${m.name||'Unnamed'}</div>
+        <div class="member-email">${m.email}</div>
+      </div>
+      <select class="role-select" id="role-${m.id}">
+        ${['admin','lead','member','viewer'].map(r=>`<option value="${r}" ${m.role===r?'selected':''}>${r}</option>`).join('')}
+      </select>
+      <select class="role-select" id="dept-${m.id}">
+        <option value="">No dept</option>
+        ${['pm','research','software','mechanical','publication'].map(d=>`<option value="${d}" ${m.department===d?'selected':''}>${d}</option>`).join('')}
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="saveMember('${m.id}')">Save</button>
+      ${m.id!==currentUser.id?`<button class="btn btn-danger btn-sm" onclick="confirmRemoveMember('${m.id}','${m.name||m.email}')">Remove</button>`:'<span style="font-size:11px;color:var(--muted);padding:0 8px">You</span>'}
+    </div>`;
+  }).join('');
+}
+
+async function saveMember(userId){
+  const role=document.getElementById(`role-${userId}`).value;
+  const dept=document.getElementById(`dept-${userId}`).value;
+  const{error}=await sb.from('profiles').update({
+    role,
+    department:dept||null
+  }).eq('id',userId);
+  if(error)toast('Update failed: '+error.message,'error');
+  else{toast('Updated!','success');loadMembers();}
+}
+
+async function updateMember(userId,role,dept){
+  const updates={};
+  if(role!==null)updates.role=role;
+  if(dept!==null)updates.department=dept||null;
+  const{error}=await sb.from('profiles').update(updates).eq('id',userId);
+  if(error)toast('Update failed: '+error.message,'error');
+  else toast('Updated!','success');
+}
+
+function confirmRemoveMember(userId,name){
+  showConfirm('Remove Member?',`Remove ${name} from the portal? They will lose all access.`,async()=>{
+    await sb.from('profiles').delete().eq('id',userId);
+    closeConfirm();
+    loadMembers();
+    toast('Member removed','success');
+  });
+}
+
+// UI HELPERS
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showTab(tab,btn){
+  document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
+  document.getElementById(`tab-${tab}`).style.display='block';
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(tab==='admin')loadMembers();
+}
+
+let confirmCallback=null;
+function showConfirm(title,body,onConfirm){
+  document.getElementById('cm-title').textContent=title;
+  document.getElementById('cm-body').textContent=body;
+  confirmCallback=onConfirm;
+  document.getElementById('cm-confirm').onclick=onConfirm;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm(){document.getElementById('confirm-modal').classList.remove('open');}
+
+function toast(msg,type=''){
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+</script>
+</body>
+</html>
