@@ -250,7 +250,7 @@ hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
         <div class="admin-card">
           <div class="admin-card-header">Adding Members</div>
           <div class="admin-card-body">
-            <p style="font-size:13px;color:var(--muted2);line-height:1.5">Share <strong style="color:var(--text)">vortex-team-eight.vercel.app</strong> with new members. They sign in with their email. They'll appear here as viewer — update their role and department below.</p>
+            <p style="font-size:13px;color:var(--muted2);line-height:1.5">Share <strong style="color:var(--text)">vortex-portal-umber.vercel.app</strong> with new members. They sign in with their email. They'll appear here as viewer — update their role and department below.</p>
           </div>
         </div>
       </div>
@@ -364,9 +364,9 @@ async function launchApp(){
   await loadAllData();
   setupRealtime();
   renderAll();
-  if(isAdmin()||isLead()){
+  if(isAdmin()){
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
-    if(isAdmin())loadMembers();
+    loadMembers();
   }
 }
 
